@@ -2,19 +2,26 @@ const mysql = require("mysql2");
 const config = require("../config");
 const bcrypt = require("bcrypt");
 
-const conexion = mysql.createConnection({
-  host: config.mysql.host,
-  user: config.mysql.user,
-  password: config.mysql.password,
-  database: config.mysql.database,
-});
+let conexion;
+
+// Usar URL de Railway si está disponible, sino usar configuración local
+if (process.env.MYSQL_URL) {
+    conexion = mysql.createConnection(process.env.MYSQL_URL);
+} else {
+    conexion = mysql.createConnection({
+        host: config.mysql.host,
+        user: config.mysql.user,
+        password: config.mysql.password,
+        database: config.mysql.database,
+    });
+}
 
 conexion.connect((error) => {
-  if (error) {
-    console.error("Error de conexión:", error);
-    return;
-  }
-  console.log("Conexión MySQL exitosa - BD:", config.mysql.database);
+    if (error) {
+        console.error("Error de conexión:", error);
+        return;
+    }
+    console.log("Conexión MySQL exitosa - BD:", config.mysql.database);
 });
 
 // Modificar la función All para incluir el caso de citas
