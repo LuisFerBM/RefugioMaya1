@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "src/index.js"
+    }
+  ],
+  "env": {
+    "MYSQL_HOST": "@mysql_host",
+    "MYSQL_USER": "@mysql_user",
+    "MYSQL_PASSWORD": "@mysql_password",
+    "MYSQL_DATABASE": "@mysql_database"
+  }
+}
