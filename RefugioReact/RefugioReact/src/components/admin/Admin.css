@@ -1,0 +1,10 @@
+.scroll-margin-top {
+    scroll-margin-top: 2rem;
+  }
+  
+  /* Efecto hover para las cards clickeables */
+  .card[style*="cursor: pointer"]:hover {
+    transform: translateY(-5px);
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
