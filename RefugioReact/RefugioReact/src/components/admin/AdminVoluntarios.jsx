@@ -19,6 +19,7 @@ const AdminVoluntarios = () => {
   const [showModal, setShowModal] = useState(false);
   const formularioRef = useRef(null);
   const [voluntarioEditar, setVoluntarioEditar] = useState(null);
+  const [animales, setAnimales] = useState([]); // Añadir este estado
 
   // Obtener todos los voluntarios
   const AllVoluntarios = async () => {
@@ -34,26 +35,20 @@ const AdminVoluntarios = () => {
       setLoading(false);
     }
   };
-  // Modificar la función getEspecieNombre
-  const getEspecieNombre = (id) => {
-    // Si el id es undefined o null, retornar Desconocido
-    if (id === undefined || id === null) {
-      return 'Desconocido';
-    }
-  
-    // Convertir el id a número
-    const especieId = Number(id);
-    
-    // Retornar el nombre basado en el ID
-    switch (especieId) {
-      case 1:
-        return 'Gato';
-      case 2:
-        return 'Perro';
-      default:
-        return 'Desconocido';
+
+  // Añadir función para obtener animales
+  const getAllAnimales = async () => {
+    try {
+      const response = await fetch("http://localhost:3000/animales");
+      if (!response.ok) throw new Error("Error al obtener animales");
+      const data = await response.json();
+      setAnimales(data.body || []);
+    } catch (error) {
+      console.error("Error:", error);
+      setError("No se pudieron cargar los animales");
     }
   };
+
   // Eliminar voluntario
   const eliminarVoluntario = async (id) => {
     if (window.confirm("¿Estás seguro de eliminar este voluntario?")) {
@@ -87,8 +82,10 @@ const AdminVoluntarios = () => {
         nombre: formularioRef.current["nombre"].value,
         email: formularioRef.current["email"].value,
         telefono: formularioRef.current["telefono"].value,
-        id_especie: parseInt(formularioRef.current["id_especie"].value),
+        id_animal: Number(formularioRef.current["id_animal"].value), // Asegurar que sea número
       };
+
+      console.log("Datos a actualizar:", formData); // Debug
 
       const response = await fetch(
         `http://localhost:3000/voluntarios/id/${voluntarioEditar.id}`,
@@ -102,21 +99,30 @@ const AdminVoluntarios = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Error al actualizar el voluntario");
+        const error = await response.json();
+        throw new Error(error.message || "Error al actualizar");
       }
 
-      alert("Voluntario actualizado correctamente");
+      const data = await response.json();
+      console.log("Respuesta:", data); // Debug
+
+      setVoluntarios((prevVoluntarios) =>
+        prevVoluntarios.map((v) =>
+          v.id === voluntarioEditar.id ? { ...v, ...formData } : v
+        )
+      );
+
       setShowModal(false);
-      AllVoluntarios(); // Corregido de AllUsuarios a AllVoluntarios
-      window.location.reload(); // Recargar la página
+      alert("Voluntario actualizado correctamente");
     } catch (error) {
       console.error("Error:", error);
-      alert("Error al actualizar el voluntario"); // Corregido de usuario a voluntario
+      alert(error.message || "Error al actualizar el voluntario");
     }
   };
 
   useEffect(() => {
     AllVoluntarios();
+    getAllAnimales(); // Llamar a la función cuando el componente se monte
   }, []);
 
   return (
@@ -145,8 +151,7 @@ const AdminVoluntarios = () => {
                   <th>ID</th>
                   <th>Nombre</th>
                   <th>Email</th>
-                  <th>Teléfono</th>
-                  <th>Especie</th>
+                  <th>Teléfono</th> <th>id_animal</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -158,10 +163,9 @@ const AdminVoluntarios = () => {
                     <td>{voluntario.email}</td>
                     <td>{voluntario.telefono}</td>
                     <td>
-                      {getEspecieNombre(voluntario.id_animal)}
-                   
-                      
-                   
+                      {animales.find((a) => a.id === voluntario.id_animal)
+                        ?.nombre || `Sin animal asignado`}{" "}
+                      (ID: {voluntario.id_animal})
                     </td>
                     <td>
                       <Button
@@ -171,15 +175,13 @@ const AdminVoluntarios = () => {
                         onClick={() => {
                           setVoluntarioEditar(voluntario);
                           setShowModal(true);
-                        }}
-                      >
+                        }}>
                         Editar
                       </Button>
                       <Button
                         variant="danger"
                         size="sm"
-                        onClick={() => eliminarVoluntario(voluntario.id)}
-                      >
+                        onClick={() => eliminarVoluntario(voluntario.id)}>
                         Eliminar
                       </Button>
                     </td>
@@ -226,13 +228,23 @@ const AdminVoluntarios = () => {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Especie</Form.Label>
+              <Form.Label>Animal Asignado</Form.Label>
               <Form.Select
-                name="id_especie"
-                defaultValue={Number(voluntarioEditar?.id_especie)}
+                name="id_animal"
+                value={voluntarioEditar?.id_animal || ""}
+                onChange={(e) => {
+                  setVoluntarioEditar({
+                    ...voluntarioEditar,
+                    id_animal: Number(e.target.value),
+                  });
+                }}
                 required>
-                <option value={1}>Gato</option>
-                <option value={2}>Perro</option>
+                <option value="">Seleccione un animal</option>
+                {animales.map((animal) => (
+                  <option key={animal.id} value={animal.id}>
+                    {animal.nombre} (ID: {animal.id})
+                  </option>
+                ))}
               </Form.Select>
             </Form.Group>
             <Button type="submit" variant="primary">

@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Container, Row, Col, Form, Button, Card } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
@@ -7,19 +7,36 @@ const Voluntarios = () => {
   const emailRef = useRef();
   const telefonoRef = useRef();
   const formularioRef = useRef();
+  const [animales, setAnimales] = useState([]);
 
-
-
-
+  // Obtener lista de animales
+  useEffect(() => {
+    const fetchAnimales = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/animales");
+        if (response.ok) {
+          const data = await response.json();
+          setAnimales(data.body || []);
+        }
+      } catch (error) {
+        console.error("Error al obtener animales:", error);
+      }
+    };
+    fetchAnimales();
+  }, []);
   
   const voluntarioRegistro = async (e) => {
     e.preventDefault();
     
+    // Seleccionar un animal aleatorio que necesite ayuda
+    const animalesDisponibles = animales.filter(animal => animal.estado_adopcion === "no adoptado");
+    const animalAleatorio = animalesDisponibles[Math.floor(Math.random() * animalesDisponibles.length)];
+
     const voluntarioData = {
       nombre: nombreRef.current.value,
       email: emailRef.current.value,
       telefono: telefonoRef.current.value,
-      id_especie: Math.random() < 0.5 ? 1 : 2 // Asigna aleatoriamente 1 o 2
+      id_animal: animalAleatorio.id
     };
 
     try {
@@ -32,7 +49,7 @@ const Voluntarios = () => {
       });
 
       if (response.ok) {
-        alert("¡Gracias por registrarte como voluntario!");
+        alert(`¡Gracias por registrarte como voluntario! Has sido asignado para ayudar a uno de nuestros animales !!!.`);
         formularioRef.current.reset();
       } else {
         throw new Error("Error al enviar el formulario");
@@ -61,8 +78,8 @@ const Voluntarios = () => {
             </Card.Header>
             <Card.Body className="p-4">
               <p className="text-center mb-4">
-                Tu ayuda es valiosa para nosotros. Completa el formulario y sé parte
-                de nuestra misión de ayudar a los animales necesitados.
+                Tu ayuda es valiosa para nosotros. Completa el formulario y serás asignado
+                a un animal que necesita tu ayuda.
               </p>
 
               <Form ref={formularioRef} onSubmit={voluntarioRegistro}>

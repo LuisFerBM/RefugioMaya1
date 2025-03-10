@@ -19,6 +19,7 @@ router.post("/unirse", async (req, res) => {
             nombre, 
             telefono, 
             email,
+            id_animal
         } = req.body;
 
         // Validar campos requeridos
@@ -30,6 +31,7 @@ router.post("/unirse", async (req, res) => {
             nombre,
             telefono,
             email,
+            id_animal
         };
 
         const voluntarioCreado = await voluntarios.Add(nuevoVoluntario);

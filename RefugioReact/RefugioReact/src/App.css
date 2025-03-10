@@ -43,20 +43,4 @@ html, body {
   height: 100%;
   overflow-x: hidden;
 }
-.carousel-image {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
-}
-
-.carousel {
-  margin: 20px 0;
-  background: rgba(0, 0, 0, 0.05);
-  padding: 20px;
-  border-radius: 10px;
-}
-
-.carousel-caption {
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 8px;
-  padding: 15px;
-}
+ 

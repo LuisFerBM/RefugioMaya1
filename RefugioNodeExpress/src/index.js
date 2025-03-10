@@ -4,7 +4,7 @@ const cors = require('cors');
 
 // Configuración de CORS
 app.use(cors({
-    origin: '*', // En producción, cambia esto por tu dominio específico
+    origin: '*',  
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));

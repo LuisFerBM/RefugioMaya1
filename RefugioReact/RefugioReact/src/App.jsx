@@ -12,7 +12,11 @@ import AdminCitas from "./components/admin/AdminCitas";
 import AdminUsuarios from "./components/admin/AdminUsuarios";
 import Voluntarios from "./components/voluntarios/voluntarios";
 import AdminVoluntarios from "./components/admin/AdminVoluntarios";
- 
+import Estado from "./components/estado/Estado";
+import Footer from "./footer/Footer";
+import AdminEstados from "./components/admin/AdminEstados";
+import { ApiProvider } from './context/apiContext';
+
 function App() {
   const videoRef = useRef(null);
 
@@ -24,7 +28,8 @@ function App() {
 
   return (
     <>
-     
+         <ApiProvider>
+
       <div className="content-container">
         <BrowserRouter>
           <Routes>
@@ -39,11 +44,15 @@ function App() {
             <Route path="/admin/adminUsuarios" element={<AdminUsuarios />} />
             <Route path="/admin/adminCitas" element={<AdminCitas />} />
             <Route path="/admin/adminVoluntarios" element={<AdminVoluntarios />} />
+            <Route path="/admin/adminEstados" element={<AdminEstados />} />
             <Route path="/voluntarios" element={<Voluntarios />} />
+            <Route path="/estado" element={<Estado />} />
+            <Route path="/" element={<Footer />} />
 
            </Routes>
         </BrowserRouter>
       </div>
+      </ApiProvider>
     </>
   ); 
 }

@@ -115,7 +115,8 @@ const AdminAnimales = () => {
     }
   };
 
-  const addAnimal = async (e) => {
+  // Modificar la función addAnimal para crear también un estado por defecto
+const addAnimal = async (e) => {
     e.preventDefault();
 
     try {
@@ -153,6 +154,7 @@ const AdminAnimales = () => {
         imagenes: imagenes || "", // Asegurarnos de que nunca sea null
       };
 
+      // Crear el animal
       const response = await fetch("http://localhost:3000/animales/add", {
         method: "POST",
         headers: {
@@ -167,40 +169,86 @@ const AdminAnimales = () => {
         throw new Error(datos.body || "Error al crear animal");
       }
 
-      alert("Animal creado correctamente");
+      // Añadir estado por defecto para el nuevo animal
+      if (datos.body && datos.body.id) {
+        const nuevoId = datos.body.id;
+        
+        // Datos de estado por defecto
+        const estadoInicial = {
+          id_animal: nuevoId,
+          comportamiento: "Por evaluar",
+          salud: "Por evaluar",
+          alimentacion: "Por definir"
+        };
+
+        // Crear el estado
+        await fetch("http://localhost:3000/estado", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(estadoInicial),
+        });
+      }
+
+      alert("Animal creado correctamente con estado inicial");
       formularioRef.current.reset();
       setValidated(false);
+      cargarAnimales(); // Recargar la lista para ver el nuevo animal
     } catch (error) {
       console.error("Error al crear animal:", error);
       setError(error.message);
     }
-  };
+};
 
-  // Añade esta función para eliminar animal
-  const eliminarAnimal = async (id) => {
+  // Reemplazar la función eliminarAnimal actual con esta versión simplificada:
+const eliminarAnimal = async (id) => {
     if (window.confirm("¿Estás seguro de que quieres eliminar este animal?")) {
-      try {
-        const response = await fetch(
-          `http://localhost:3000/animales/id/${id}`,
-          {
-            method: "DELETE",
-          }
-        );
-
-        const datos = await response.json();
-
-        if (!response.ok) {
-          throw new Error(datos.body || "Error al eliminar animal");
+        try {
+            console.log('Eliminando animal:', id);
+            
+            // Primero intentar eliminar estados relacionados si existen
+            try {
+                const estadoResponse = await fetch(`http://localhost:3000/estado/id/${id}`);
+                const estadoData = await estadoResponse.json();
+                
+                if (estadoResponse.ok && estadoData.body) {
+                    const estadoId = estadoData.body.id_estado;
+                    console.log('Encontrado estado:', estadoId, 'para animal:', id);
+                    
+                    // Eliminar el estado
+                    await fetch(`http://localhost:3000/estado/id/${estadoId}`, {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" }
+                    });
+                }
+            } catch (estadoError) {
+                console.log('No se encontraron estados para el animal o ya fueron eliminados');
+            }
+            
+            // Ahora eliminar el animal
+            const response = await fetch(`http://localhost:3000/animales/id/${id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" }
+            });
+            
+            // Actualizar la UI inmediatamente para mejor experiencia
+            setAnimales(prev => prev.filter(animal => animal.id !== id));
+            alert("Animal eliminado correctamente");
+            
+            // Si hay error, recargar la lista para asegurar consistencia
+            if (!response.ok) {
+                cargarAnimales();
+            }
+            
+        } catch (error) {
+            console.error("Error al eliminar:", error);
+            setError("Error al eliminar: " + error.message);
+            // Recargar lista en caso de error para asegurar consistencia
+            cargarAnimales();
         }
-
-        alert("Animal eliminado correctamente");
-        cargarAnimales(); // Recargar la lista
-      } catch (error) {
-        console.error("Error al eliminar animal:", error);
-        setError(error.message);
-      }
     }
-  };
+};
 
   // Añade esta función para scroll suave al formulario
   const scrollToUpdateForm = () => {
@@ -285,13 +333,16 @@ const AdminAnimales = () => {
                   variant="top"
                   src={animal.imagen}
                   style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
+                    width: "100%", 
+                    height: "300px",     // Altura fija para todas las imágenes
+                    objectFit: "cover"   // Mantiene la proporción cortando si es necesario
                   }}
                 />
               ) : (
-                <div className="text-center p-3">
+                <div 
+                  className="text-center p-3" 
+                  style={{ height: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}
+                >
                   <h3 className="text-muted fs-6">Sin imagen</h3>
                 </div>
               )}
@@ -352,8 +403,7 @@ const AdminAnimales = () => {
             <Form.Select required>
               <option value="">Seleccione una especie</option>
               <option value="Gato">Gato</option>
-              <option value="Perro">Perro</option>
-            </Form.Select>
+              <option value="Perro ">Perro </option></Form.Select>
             <Form.Control.Feedback type="invalid">
               Por favor seleccione una especie
             </Form.Control.Feedback>

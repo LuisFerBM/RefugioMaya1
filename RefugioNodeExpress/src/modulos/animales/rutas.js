@@ -63,7 +63,7 @@ router.post("/add", async (req, res) => {
   }
 });
 
-// DELETE animal por ID
+// DELETE animal por ID con eliminación en cascada
 router.delete("/id/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -73,11 +73,27 @@ router.delete("/id/:id", async (req, res) => {
       return respuesta.error(req, res, "ID no válido", 400);
     }
 
+    // Primero verificar si existe el animal
+    const animal = await animales.One(id);
+    if (!animal) {
+      return respuesta.error(req, res, "Animal no encontrado", 404);
+    }
+
+    // Eliminar primero los estados asociados (si existen)
+    try {
+      await db.query('DELETE FROM estado WHERE id_animal = ?', [id]);
+      console.log('Estados eliminados para el animal:', id);
+    } catch (estadoError) {
+      console.log('No se encontraron estados para eliminar:', estadoError);
+    }
+
+    // Ahora sí eliminar el animal
     await animales.Delete(id);
+
     respuesta.success(
       req,
       res,
-      { mensaje: "Animal eliminado correctamente" },
+      { mensaje: "Animal y sus estados eliminados correctamente" },
       200
     );
   } catch (error) {
@@ -85,6 +101,7 @@ router.delete("/id/:id", async (req, res) => {
     respuesta.error(req, res, "Error al eliminar animal", 500, error);
   }
 });
+
 router.put("/id/:id", async (req, res) => {
   try {
     const id = req.params.id;

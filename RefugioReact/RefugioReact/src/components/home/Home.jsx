@@ -15,7 +15,7 @@ import uno from "../../assets/uno.jpg";
 import video from "../../assets/video/video.mp4"; // Corregida la ruta
 import "../../App.css"; // Importar estilos de App.css
 import "./Home.css"; // Importar estilos de Home.css
-
+import Footer from "../../footer/Footer";
 const Home = () => {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -345,6 +345,10 @@ const Home = () => {
           </Container>
         </section>
       </div>
+
+      <footer className="footer-container">
+        <Footer />
+      </footer>
     </>
   );
 };

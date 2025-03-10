@@ -96,6 +96,15 @@ const AdminCitas = () => {
           <Col>
             <h1 className="text-center">Citas</h1>
           </Col>
+              <Col>    <Button 
+                      as={Link} 
+                      to="/admin" 
+                      variant="secondary"
+                      className="me-2"
+                    >
+                      <i className="bi bi-arrow-left me-2"></i>
+                      Volver al Panel
+                    </Button></Col>
         </Row>
         <Row>
           {citas?.map((cita) => (

@@ -80,6 +80,16 @@ async function One(nombreTabla, id) {
           c.nombre_animal
         FROM citas c
         WHERE c.id = ?`;
+      } else if (nombreTabla === "estado") {
+        query = `
+          SELECT 
+            e.*,
+            a.nombre as nombre_animal,
+            a.id_especie
+          FROM estado e
+          LEFT JOIN animales a ON e.id_animal = a.id
+          WHERE e.id = ?
+        `;
       } else {
         query = `SELECT * FROM ${nombreTabla} WHERE id = ?`;
       }
@@ -180,6 +190,50 @@ async function Add(nombreTabla, data) {
           });
         });
         return;
+      } else if (nombreTabla === "voluntarios") {
+        console.log("Iniciando registro de voluntario:", data);
+        
+        // Primero obtener un animal aleatorio con JOIN para asegurar la relación
+        const insertWithAnimalQuery = `
+            INSERT INTO voluntarios (nombre, telefono, email, id_animal)
+            SELECT 
+                ?,
+                ?,
+                ?,
+                id
+            FROM animales 
+            ORDER BY RAND() 
+            LIMIT 1
+        `;
+
+        const voluntarioData = [data.nombre, data.telefono, data.email];
+
+        conexion.query(insertWithAnimalQuery, voluntarioData, (error, result) => {
+            if (error) {
+                console.error("Error al insertar voluntario:", error);
+                return reject(error);
+            }
+
+            // Obtener el voluntario creado con el nombre del animal
+            const selectQuery = `
+                SELECT 
+                    v.*,
+                    a.nombre as nombre_animal
+                FROM voluntarios v
+                INNER JOIN animales a ON v.id_animal = a.id
+                WHERE v.id = ?
+            `;
+
+            conexion.query(selectQuery, [result.insertId], (error, results) => {
+                if (error) {
+                    console.error("Error al obtener voluntario:", error);
+                    return reject(error);
+                }
+                console.log("Voluntario creado:", results[0]);
+                resolve(results[0]);
+            });
+        });
+        return;
       }
 
       const query = `INSERT INTO ${nombreTabla} SET ?`;
@@ -202,12 +256,33 @@ async function Add(nombreTabla, data) {
 async function Delete(nombreTabla, id) {
   try { 
     return new Promise((resolve, reject) => {
-      const query = `DELETE FROM ${nombreTabla} WHERE id = ?`;
+      let query;
+      
+      // Manejar casos específicos por tabla
+      switch (nombreTabla) {
+        case "estado":
+          query = `DELETE FROM estado WHERE id = ?`;  // Corregido de id_estado a id
+          break;
+        default:
+          query = `DELETE FROM ${nombreTabla} WHERE id = ?`;
+      }
+
+      console.log("Query de eliminación:", query, "ID:", id);
+
       conexion.query(query, [id], (error, results) => {
         if (error) {
+          console.error("Error en Delete:", error);
           return reject(error);
         }
-        resolve(results);
+        
+        if (results.affectedRows === 0) {
+          return reject(new Error(`No se encontró el registro en ${nombreTabla}`));
+        }
+        
+        resolve({ 
+          message: `${nombreTabla} eliminado correctamente`,
+          affectedRows: results.affectedRows 
+        });
       });
     });
   } catch (error) {
@@ -317,28 +392,68 @@ async function Login(tabla, email) {
 async function FindByEmail(email) {
   try { 
     return new Promise((resolve, reject) => {      
-      const query = `SELECT * FROM usuarios WHERE email = ?`;
+      // Validar que el email no esté vacío
+      if (!email) {
+        return reject(new Error("Email requerido"));
+      }
+
+      const query = `SELECT id, email FROM usuarios WHERE email = ?`;
+      
       conexion.query(query, [email], (error, results) => {
         if (error) {
-          return reject(error);
+          console.error("Error en consulta:", error);
+          return reject(new Error("Error en la base de datos"));
         }
-        resolve(results);
+
+        // Devolver solo el primer resultado si existe
+        resolve(results[0] || null);
       });
     });
   } catch (error) {
     console.error("Error en FindByEmail:", error);
-    throw error;
+    throw new Error("Error al buscar por email");
   } 
 }
 
+async function OneByAnimal(idAnimal) {
+    try {
+        return new Promise((resolve, reject) => {
+            const query = `
+                SELECT 
+                    e.*,
+                    a.nombre as nombre_animal,
+                    a.id_especie
+                FROM estado e
+                LEFT JOIN animales a ON e.id_animal = a.id
+                WHERE e.id_animal = ?
+            `;
+            
+            console.log("Query OneByAnimal:", query);
+            console.log("Params:", idAnimal);
+            
+            conexion.query(query, [idAnimal], (error, results) => {
+                if (error) {
+                    console.error("Error en query:", error);
+                    return reject(error);
+                }
+                console.log("Resultados:", results);
+                resolve(results[0]); // Devuelve el primer resultado
+            });
+        });
+    } catch (error) {
+        console.error("Error en OneByAnimal:", error);
+        throw error;
+    }
+}
 
 module.exports = {
-  conexion,
-  All,
-  One,
-  Add,
-  Delete,
-  Update,
-  FindByEmail,
-  Login,
+    conexion,
+    All,
+    One,
+    Add,
+    Delete,
+    Update,
+    FindByEmail,
+    Login,
+    OneByAnimal
 };
